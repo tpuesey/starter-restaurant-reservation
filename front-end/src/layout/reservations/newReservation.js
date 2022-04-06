@@ -1,20 +1,61 @@
-import React from 'react';
+import React, { useState } from "react";
+import { useHistory } from "react-router-dom";
+import { createReservation } from "../../utils/api";
+import ErrorAlert from "../ErrorAlert";
+import ReservationForm from "./ReservationForm";
+function NewReservation() {
+  const history = useHistory();
+  const initialFormState = {
+    first_name: "",
+    last_name: "",
+    mobile_number: "",
+    reservation_date: "",
+    reservation_time: "",
+    people: "",
+  };
 
-function displayReservation(userInput) {
-        
+  const [formData, setFormData] = useState(initialFormState);
+  const [resError, setResError] = useState(false);
+
+  const handleChange = (event) => {
+    event.preventDefault();
+    setFormData((newReservation) => ({
+      ...newReservation,
+      [event.target.name]: event.target.value,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const abortController = new AbortController();
+    let newReservationDate = formData.reservation_date;
+    setResError(null);
+    formData.people = Number(formData.people);
+
+    try {
+      await createReservation(formData, abortController.signal);
+      setFormData(initialFormState);
+      history.push(`/dashboard?date=${newReservationDate}`);
+    } catch (error) {
+      setResError(error);
+    }
+    return () => abortController.abort();
+  };
+  return (
+    <>
+      <main className="m-3">
+        <div className="page-head-container">
+          <h2> Create New Reservation</h2>
+        </div>
+        <ErrorAlert error={resError} />
+        <ReservationForm
+          handleChange={handleChange}
+          handleSubmit={handleSubmit}
+          formData={formData}
+        />
+      </main>
+    </>
+  );
 }
 
-
-return (
-        <div>
-             <p>First name: <input name="first_name"></input></p>
-             <p>Last name: <input name="last_name"></input></p>   
-             <p>Mobile number: <input name="mobile_number"></input></p>   
-             <p>Date of Reservation: <input name="reservation_date"></input></p>   
-             <p>Time of reservation: <input name="reservation_time"></input></p>   
-             <p>Number of people: <input name="people"></input></p>
-             <div>
-                <button type="submit" onClick={displayreservation()}>Save reservation</button>        
-             </div>     
-        </div>
-)
+export default NewReservation;
